@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hall Effect Sensor Serial Monitor</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #0d1117;
+      color: #e6edf3;
+      text-align: center;
+      padding: 30px;
+    }
+    button {
+      background-color: #238636;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      font-size: 16px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #2ea043;
+    }
+    #output {
+      margin-top: 30px;
+      font-size: 22px;
+      background: #161b22;
+      padding: 20px;
+      border-radius: 12px;
+      width: 300px;
+      margin-left: auto;
+      margin-right: auto;
+      box-shadow: 0 0 10px rgba(255,255,255,0.1);
+    }
+  </style>
+</head>
+<body>
+  <h1>Hall Effect Sensor Data Monitor</h1>
+  <button id="connectBtn">🔌 Connect to Arduino</button>
+  <div id="output">No data yet...</div>
+
+  <script>
+    const connectBtn = document.getElementById("connectBtn");
+    const outputDiv = document.getElementById("output");
+    let port;
+    let reader;
+
+    async function connectSerial() {
+      try {
+        port = await navigator.serial.requestPort();
+        await port.open({ baudRate: 9600 });
+
+        const decoder = new TextDecoderStream();
+        const inputDone = port.readable.pipeTo(decoder.writable);
+        const inputStream = decoder.readable;
+        reader = inputStream.getReader();
+
+        outputDiv.innerHTML = "Connected! Waiting for data...";
+
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          if (value) {
+            outputDiv.innerHTML = `Sensor Reading: <strong>${value.trim()}</strong>`;
+          }
+        }
+      } catch (err) {
+        console.error("Error:", err);
+        outputDiv.innerHTML = "⚠️ Connection failed or closed.";
+      }
+    }
+
+    connectBtn.addEventListener("click", connectSerial);
+  </script>
+</body>
+</html>
